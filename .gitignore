@@ -1,3 +1,11 @@
+# Project files
+todo.md
+videos/
+
+# VSCode settings
+.vscode/
+.pylintrc
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
