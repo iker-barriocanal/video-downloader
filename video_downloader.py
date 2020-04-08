@@ -3,6 +3,7 @@ import os
 import urllib
 import re
 import argparse
+from datetime import datetime
 import requests
 from pytube import YouTube
 
@@ -10,31 +11,48 @@ from pytube import YouTube
 FILE_EXTENSION_PATTERN = re.compile(r'\.\w+$')
 FILENAME_PATTERN = re.compile(r'\w+$')
 DIRECTORY_PATTERN = re.compile(r'^.?/?(\w+/)*')
+FB_VIDEO_URL_PATTERN = '"(.+?)"'  # The prefix with the desired quality is missing: (hd|sd)_src:
 
 EXIT_NO_CODECS = "There are no streams with video and audio codecs available for this video."
 EXIT_NO_CODECS_CUSTOM_RES = "No streams found with both audio and video codecs. Try setting the resolution to max."
 
 
 def _add_program_args():
-    arg_parser = argparse.ArgumentParser(description="Downloads videos from Facebook.")
-    arg_parser.add_argument('video_url', type=str, nargs=1, metavar='url', help="The URL of the video to be downloaded.")
-    arg_parser.add_argument('-o', '--output', type=str, nargs='?', default=os.path.abspath(os.path.dirname(sys.argv[0])), help="Output file")
-    arg_parser.add_argument('-q', '--quality', type=str, nargs='?', choices={'sd', 'hd'}, default='hd', help="Quality of the video")
+    arg_parser = argparse.ArgumentParser(description="Downloads videos from some platforms on the internet.")
+    arg_parser.add_argument('platform', type=str, nargs=1, choices=['fb', 'yt'],
+                            help="Selects the platform to download videos from.")
+    arg_parser.add_argument('video_url', type=str, nargs=1, metavar='url',
+                            help="The URL of the video to be downloaded.")
+    arg_parser.add_argument('-o', '--output', type=str, nargs='?', default=None, help="Output file")
+    arg_parser.add_argument('-r', '--resolution', type=str, nargs=1, default='max', help="Quality of the video.")
 
     return arg_parser.parse_args()
 
 
-def download_video_from_facebook(destination_path, url, quality='hd'):
-    # Quality can also be 'sd'
+def _parse_args(args_to_parse):
+    args_to_parse.platform = args_to_parse.platform[0]
+    args_to_parse.video_url = args_to_parse.video_url[0]
+    if args_to_parse.output is None:
+        args_to_parse.output = os.path.abspath(os.path.dirname(sys.argv[0]))
+        args_to_parse.output = args_to_parse.output + '/video_' + datetime.today().strftime(r'%Y_%m_%d_%f') + '.mp4'
+    else:
+        args_to_parse.output = os.path.abspath(os.path.dirname(sys.argv[0])) + '/' + args_to_parse.output
+    if isinstance(args_to_parse.resolution, list):
+        args_to_parse.resolution = args_to_parse.resolution[0]
 
+    if args_to_parse.platform == 'fb' and args_to_parse.resolution == 'max':
+        args_to_parse.resolution = 'hd'
+
+    return args_to_parse
+
+
+def download_video_from_facebook(destination_path, url, quality='hd'):
     request = requests.get(url)
     quality_prefix = quality + '_src:'
-
     # Look for the actual video url
-    url = re.search(quality_prefix + '"(.+?)"', request.text)[0]
+    url = re.search(quality_prefix + FB_VIDEO_URL_PATTERN, request.text)[0]
     url = url.replace(quality_prefix, '')
     url = url.replace('"', '')
-    
     # Save the video
     urllib.request.urlretrieve(url, destination_path)
 
@@ -62,6 +80,9 @@ def download_video_from_youtube(destination_path, url, resolution):
 
 
 if __name__ == "__main__":
-    # args = _add_program_args()
-    # download_video_from_facebook(args.output, args.video_url[0], args.quality)
-    download_video_from_youtube('', url='', resolution='max')
+    args = _add_program_args()
+    args = _parse_args(args)
+    if args.platform == 'fb':
+        download_video_from_facebook(destination_path=args.output, url=args.video_url, quality=args.resolution)
+    elif args.platform == 'yt':
+        download_video_from_youtube(destination_path=args.output, url=args.video_url, resolution=args.resolution)
