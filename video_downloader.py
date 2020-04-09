@@ -10,7 +10,7 @@ from pytube import YouTube
 
 FILE_EXTENSION_PATTERN = re.compile(r'\.\w+$')
 FILENAME_PATTERN = re.compile(r'\w+$')
-DIRECTORY_PATTERN = re.compile(r'^.?/?(\w+/)*')
+DIRECTORY_PATTERN = re.compile(r'^.?/?([\w\-]+/)*')
 FB_VIDEO_URL_PATTERN = '"(.+?)"'  # The prefix with the desired quality is missing: (hd|sd)_src:
 
 EXIT_NO_CODECS = "There are no streams with video and audio codecs available for this video."
@@ -35,8 +35,6 @@ def _parse_args(args_to_parse):
     if args_to_parse.output is None:
         args_to_parse.output = os.path.abspath(os.path.dirname(sys.argv[0]))
         args_to_parse.output = args_to_parse.output + '/video_' + datetime.today().strftime(r'%Y_%m_%d_%f') + '.mp4'
-    else:
-        args_to_parse.output = os.path.abspath(os.path.dirname(sys.argv[0])) + '/' + args_to_parse.output
     if isinstance(args_to_parse.resolution, list):
         args_to_parse.resolution = args_to_parse.resolution[0]
 
