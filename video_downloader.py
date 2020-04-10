@@ -35,6 +35,8 @@ def _parse_args(args_to_parse):
     if args_to_parse.output is None:
         args_to_parse.output = os.path.abspath(os.path.dirname(sys.argv[0]))
         args_to_parse.output = args_to_parse.output + '/video_' + datetime.today().strftime(r'%Y_%m_%d_%f') + '.mp4'
+    elif '/' not in args_to_parse.output:
+        args_to_parse.output = './' + args_to_parse.output
     if isinstance(args_to_parse.resolution, list):
         args_to_parse.resolution = args_to_parse.resolution[0]
 
